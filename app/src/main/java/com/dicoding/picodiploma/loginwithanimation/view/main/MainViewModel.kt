@@ -14,11 +14,9 @@ import retrofit2.Callback
 import retrofit2.Response
 
 class MainViewModel(private val repository: UserRepository) : ViewModel() {
-    private val _listStories = MutableLiveData<List<ListStoryItem>>()
-    val listStories: LiveData<List<ListStoryItem>> get() = _listStories
 
-    private val _errorMessage = MutableLiveData<String>()
-    val errorMessage: LiveData<String> get() = _errorMessage
+    private val _listStories = MutableLiveData<List<ListStoryItem>?>()
+    val listStories: LiveData<List<ListStoryItem>?> get() = _listStories
 
     fun getSession(): LiveData<UserModel> {
         return repository.getSession().asLiveData()
@@ -33,19 +31,14 @@ class MainViewModel(private val repository: UserRepository) : ViewModel() {
                     response: Response<StoriesResponse>
                 ) {
                     if (response.isSuccessful) {
-                        val stories = response.body()?.listStory?.filterNotNull()
-                        if (!stories.isNullOrEmpty()) {
-                            _listStories.postValue(stories)
-                        } else {
-                            _errorMessage.postValue("Data cerita kosong.")
-                        }
+                        _listStories.postValue(response.body()?.listStory.orEmpty())
                     } else {
-                        _errorMessage.postValue("Gagal memuat data: ${response.message()}")
+                        _listStories.postValue(emptyList())
                     }
                 }
 
                 override fun onFailure(call: Call<StoriesResponse>, t: Throwable) {
-                    _errorMessage.postValue("Gagal memuat data: ${t.message}")
+                    _listStories.postValue(emptyList())
                 }
             })
     }
